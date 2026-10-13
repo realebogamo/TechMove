@@ -23,7 +23,33 @@ docker compose up --build
 | http://localhost:8081/swagger | API docs. Use `POST /api/auth/login`, then **Authorize** with the token |
 | http://localhost:8081/health | API + database health |
 
-To override the dev passwords and JWT key, copy `.env.example` to `.env`.
+To override the dev passwords and JWT key, copy `.env.example` to `.env` (see [Configuration](#configuration)).
+
+## Tech stack
+
+| Area | Technology | Version | Used for |
+|---|---|---|---|
+| Runtime / language | .NET, C# | 8.0 (LTS), C# 12 | All projects |
+| Front end | ASP.NET Core MVC + Razor views | 8.0 | `GLMS.Web` |
+| UI | Bootstrap, jQuery, jQuery Validation (+ Unobtrusive) | 5.1, 3.6, 1.19 | Layout, client-side validation |
+| Back end | ASP.NET Core Web API (controllers) | 8.0 | `GLMS.Api` |
+| API docs | Swashbuckle (Swagger / OpenAPI) | 6.9.0 | `/swagger` |
+| Authentication | JWT bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`), cookie auth in the MVC app | 8.0.31 | Login, securing every API call |
+| Password hashing | ASP.NET Core Identity `PasswordHasher` (PBKDF2) | 8.0.31 | `Users` table |
+| ORM | Entity Framework Core (SQL Server provider, Fluent API, migrations) | 8.0.31 | `GLMS.Infrastructure` |
+| Database | Microsoft SQL Server | 2022 (Docker) / LocalDB | Data store |
+| External API | ExchangeRate-API open access endpoint (`open.er-api.com`) | v6 | USD to ZAR rates |
+| HTTP clients | `IHttpClientFactory` typed clients, `System.Text.Json` | 8.0 | Rate API calls; MVC to API calls |
+| Caching | `IMemoryCache` | 8.0 | Exchange-rate caching |
+| Background work | `BackgroundService` + `PeriodicTimer` | 8.0 | Hourly contract expiry |
+| Health checks | ASP.NET Core health checks + EF Core DbContext check | 8.0.31 | `/health` |
+| Unit tests | xUnit, Moq, EF Core InMemory | 2.9.3, 4.20.72, 8.0.31 | `GLMS.UnitTests` |
+| Integration tests | `Microsoft.AspNetCore.Mvc.Testing` (WebApplicationFactory), SQLite in-memory | 8.0.31 | `GLMS.IntegrationTests` |
+| Coverage | coverlet | 6.0.4 | `dotnet test --collect:"XPlat Code Coverage"` |
+| Containers | Docker (multi-stage builds), Docker Compose | Compose v2 | 3-container deployment |
+| Base images | `mcr.microsoft.com/dotnet/sdk:8.0`, `aspnet:8.0`, `mssql/server:2022-latest` | | Build / runtime / database |
+| CI | GitHub Actions (`ubuntu-latest`) | | Build, test, compose test |
+| Tooling | `dotnet-ef` (local tool in `.config/dotnet-tools.json`) | 8.0.31 | Migrations and SQL script |
 
 ## Solution layout
 
@@ -131,14 +157,123 @@ Repository and Service Layer are used as well, but they are architectural patter
 * SQL Server has a health check, and the API waits for it (`depends_on: service_healthy`), then
   migrates and seeds with retries.
 
-## Running without Docker
+## Configuration
 
-Requires the .NET 8 SDK and a SQL Server (LocalDB by default).
+### Prerequisites
+
+| Scenario | You need |
+|---|---|
+| Run everything in Docker | Docker Desktop (with Compose v2). Nothing else. |
+| Run / debug locally | .NET 8 SDK, plus a SQL Server: LocalDB (installed with Visual Studio's "Data storage" workload), SQL Server Express/Developer, or SQL Server in Docker |
+| Edit migrations | `dotnet tool restore` (installs the pinned `dotnet-ef` 8.0.31) |
+
+NuGet packages come from nuget.org through the repo's `nuget.config`, so restores work even on machines
+with no package sources configured globally.
+
+### How configuration is loaded
+
+Both apps use standard ASP.NET Core configuration. Later sources override earlier ones:
+
+1. `appsettings.json`: safe defaults, committed, **no secrets**
+2. `appsettings.{Environment}.json`: `Development` adds local-only dev values (JWT key, admin seed)
+3. Environment variables: nested keys use a double underscore, e.g. `Jwt:SigningKey` -> `Jwt__SigningKey`
+4. Command-line arguments, e.g. `--ConnectionStrings:DefaultConnection="..."`
+
+Docker Compose sets everything through environment variables (layer 3). The values come from a `.env`
+file next to `docker-compose.yml` if you create one, otherwise from the dev defaults in the compose file.
+
+### glms-backend-api settings (`src/GLMS.Api`)
+
+| Key | Default | Description |
+|---|---|---|
+| `ConnectionStrings:DefaultConnection` | LocalDB `GlmsDb` | SQL Server connection string. **The API is the only app with one.** |
+| `Database:MigrateOnStartup` | `true` | Apply EF Core migrations and seed demo data on start-up (retries up to 10 times while SQL Server starts) |
+| `Jwt:SigningKey` | *(empty)*; dev value in `appsettings.Development.json` | HMAC key for signing tokens, **at least 32 characters**. Required: if it is missing or too short, login and every secured endpoint fail with a 500 error explaining the key is not configured. |
+| `Jwt:Issuer` / `Jwt:Audience` | `glms-backend-api` / `glms-frontend-web` | Values written to and validated in each token |
+| `Jwt:LifetimeMinutes` | `60` | Token lifetime (the web sign-in lasts the same time) |
+| `Auth:SeedAdmin:Username` / `Password` | *(empty)*; `admin` / `Admin@12345` in Development | Creates this admin user on start-up if it does not exist. Leave empty to skip. |
+| `Swagger:Enabled` | `true` | Serve `/swagger` |
+| `ExchangeRateApi:BaseUrl` | `https://open.er-api.com/v6/` | Exchange-rate provider (free, no API key) |
+| `ExchangeRateApi:CacheMinutes` | `60` | How long a fetched rate is reused |
+| `ExchangeRateApi:TimeoutSeconds` | `10` | HTTP timeout for the rate API |
+| `FileStorage:RootPath` | `App_Data/agreements` | Folder for signed-agreement PDFs (relative paths resolve from the app folder; Docker uses a volume) |
+| `ContractExpiry:Enabled` | `true` | Run the background job that marks overdue contracts Expired |
+| `ContractExpiry:IntervalMinutes` | `60` | How often the expiry job runs |
+
+### glms-frontend-web settings (`src/GLMS.Web`)
+
+| Key | Default | Description |
+|---|---|---|
+| `GlmsApi:BaseUrl` | `http://localhost:5147/` | Where the API is. In Compose: `http://glms-backend-api:8080/` |
+| `GlmsApi:TimeoutSeconds` | `15` | After this, the user sees the "service unavailable" page |
+| `UseHttpsRedirection` | `true` | Set `false` when served over plain HTTP (as in Docker) |
+| `DataProtection:KeysPath` | *(empty)*; `/app/keys` in Docker | Where cookie-encryption keys are stored, so sign-ins survive restarts |
+
+The web app has **no connection string**. It only knows the API's URL.
+
+### Docker Compose variables (`.env`)
+
+Copy `.env.example` to `.env` (git-ignored) and change the values:
+
+| Variable | Dev default | Used for |
+|---|---|---|
+| `SA_PASSWORD` | `Glms_Dev_Pass123` | SQL Server `sa` password (must meet SQL Server complexity rules) and the API's connection string |
+| `JWT_SIGNING_KEY` | `compose-dev-signing-key-change-me-0123456789` | `Jwt__SigningKey` for the API |
+| `GLMS_ADMIN_USER` | `admin` | Seeded admin username |
+| `GLMS_ADMIN_PASSWORD` | `Admin@12345` | Seeded admin password |
+
+Ports: web `8080`, API `8081` (Swagger). SQL Server is **not** published to the host; it is reachable
+only on the internal `glms-backend` network. Data lives in named volumes: `sql-data` for the database,
+`agreements` for uploaded PDFs and `web-keys` for cookie keys.
 
 ```bash
-dotnet run --project src/GLMS.Api   # http://localhost:5147/swagger (Development: admin / Admin@12345)
-dotnet run --project src/GLMS.Web   # calls the API at GlmsApi:BaseUrl
+docker compose up --build -d     # build and start
+docker compose ps                # status (sql-server-db should show "healthy")
+docker compose logs -f glms-backend-api
+docker compose down              # stop, keeping data
+docker compose down -v           # stop and delete the database, uploads and keys
 ```
+
+If you change `SA_PASSWORD` after the first run, also run `docker compose down -v`. SQL Server only sets
+the password when it creates its data volume.
+
+### Running locally without Docker
+
+1. **Start a database.** LocalDB works with the default connection string. Or run SQL Server in Docker
+   with a published port:
+
+   ```bash
+   docker run -d --name glms-sql -e ACCEPT_EULA=Y -e "MSSQL_SA_PASSWORD=Your_Strong_Pass123" -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
+   ```
+
+2. **Run the API.** It migrates the database and seeds the demo data and the `admin` user on first start:
+
+   ```bash
+   # LocalDB:
+   dotnet run --project src/GLMS.Api --launch-profile http
+   # SQL Server in Docker (PowerShell syntax for the environment variable):
+   $env:ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=GlmsDb;User Id=sa;Password=Your_Strong_Pass123;TrustServerCertificate=True"
+   dotnet run --project src/GLMS.Api --launch-profile http
+   ```
+
+   Swagger: http://localhost:5147/swagger
+
+3. **Run the web app** in a second terminal: `dotnet run --project src/GLMS.Web --launch-profile http`,
+   then open http://localhost:5217 and sign in as `admin` / `Admin@12345`.
+
+In **Visual Studio**, open `GLMS.sln`, right-click the solution, choose **Configure Startup Projects ->
+Multiple startup projects**, and set `GLMS.Api` and `GLMS.Web` to *Start*.
+
+Both apps run with `ASPNETCORE_ENVIRONMENT=Development` from their launch profiles, which is what
+supplies the dev JWT key and admin seed. Anywhere else, set `Jwt__SigningKey` and the `Auth__SeedAdmin__*`
+values yourself.
+
+### Production checklist
+
+* Set a long random `Jwt__SigningKey` and strong `SA_PASSWORD` / admin password. Never use the dev defaults.
+* Use a dedicated SQL login instead of `sa`.
+* Put the web app behind HTTPS (a reverse proxy or load balancer) and leave `UseHttpsRedirection` on.
+* Consider `Swagger__Enabled=false` if the API should not be browsable.
 
 ### Migrations
 
