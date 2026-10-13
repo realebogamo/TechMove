@@ -1,0 +1,21 @@
+$kind: collection
+description: |-
+  End-to-end requests for GLMS.Api. Run "Auth > Login" first (or run the whole collection in order with the Collection Runner); it stores the JWT in {{token}}, which every other request sends as a Bearer token. Create requests store the new ids (clientId, contractId, serviceRequestId) so later requests reuse them.
+
+  Pick an environment: "GLMS - Local" (dotnet run, http://localhost:5147) or "GLMS - Docker" (docker compose, http://localhost:8081).
+variables:
+  baseUrl: http://localhost:5147
+  username: admin
+  password: Admin@12345
+  token: ""
+  clientId: ""
+  contractId: ""
+  serviceRequestId: ""
+  startDate: ""
+  endDate: ""
+auth:
+  - id: 44e40632-885a-4fbc-b180-aee6ab53a130
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{token}}"

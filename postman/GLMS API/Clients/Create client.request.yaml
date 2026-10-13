@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/api/clients"
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Postman Logistics {{$randomInt}}",
+      "contactPerson": "Thandi Mokoena",
+      "contactEmail": "thandi@example.com",
+      "contactPhone": "+27 11 555 0100",
+      "region": "Gauteng"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('201 Created', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test('has an id', () => pm.expect(body.id).to.be.above(0));
+      pm.collectionVariables.set('clientId', body.id);
+    language: text/javascript
+order: 1000

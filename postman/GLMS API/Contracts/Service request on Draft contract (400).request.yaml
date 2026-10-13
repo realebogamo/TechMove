@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/service-requests"
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "contractId": {{contractId}},
+      "description": "Should be rejected while Draft",
+      "costUsd": 100
+    }
+scripts:
+  - type: afterResponse
+    code: "pm.test('400: contract is not Active', () => pm.response.to.have.status(400));"
+    language: text/javascript
+order: 6000

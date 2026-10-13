@@ -1,0 +1,8 @@
+name: GLMS - Docker
+values:
+  - key: baseUrl
+    value: 'http://localhost:8081'
+  - key: username
+    value: admin
+  - key: password
+    value: Admin@12345

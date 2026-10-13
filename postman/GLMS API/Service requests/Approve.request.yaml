@@ -1,0 +1,20 @@
+$kind: http-request
+description: "status: Pending | Approved | Declined | Completed. Pending->Approved|Declined, Approved->Completed."
+url: "{{baseUrl}}/api/service-requests/{{serviceRequestId}}/status"
+method: PATCH
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "status": "Approved"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('Approved', () => pm.expect(pm.response.json().status).to.eql('Approved'));
+    language: text/javascript
+order: 5000

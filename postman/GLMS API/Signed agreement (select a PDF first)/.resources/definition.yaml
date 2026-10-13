@@ -1,0 +1,3 @@
+$kind: collection
+description: Before running, open "Upload agreement" > Body and choose a PDF (max 10 MB) for the `file` field. Postman can't ship a file path that works on every machine.
+order: 6000

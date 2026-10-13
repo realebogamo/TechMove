@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/clients"
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: pm.test('401 Unauthorized', () => pm.response.to.have.status(401));
+    language: text/javascript
+order: 3000

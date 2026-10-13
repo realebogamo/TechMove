@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/contracts/{{contractId}}/status"
+method: PATCH
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "status": "Expired"
+    }
+scripts:
+  - type: afterResponse
+    code: "pm.test('400: transition not allowed from Draft', () => pm.response.to.have.status(400));"
+    language: text/javascript
+order: 5000

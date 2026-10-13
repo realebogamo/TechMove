@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/service-requests?contractId={{contractId}}"
+method: GET
+queryParams:
+  contractId: "{{contractId}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('all belong to the contract', () => pm.response.json().forEach(r => pm.expect(r.contractId).to.eql(Number(pm.collectionVariables.get('contractId')))));
+    language: text/javascript
+order: 2000

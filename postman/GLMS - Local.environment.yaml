@@ -1,0 +1,8 @@
+name: GLMS - Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:5147'
+  - key: username
+    value: admin
+  - key: password
+    value: Admin@12345

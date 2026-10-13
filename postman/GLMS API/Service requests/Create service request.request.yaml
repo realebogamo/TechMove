@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/api/service-requests"
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "contractId": {{contractId}},
+      "description": "Emergency pallet relocation, Durban depot",
+      "costUsd": 250.75
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('201 Created', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test('starts Pending', () => pm.expect(body.status).to.eql('Pending'));
+      pm.test('ZAR cost = USD cost x rate', () => pm.expect(body.costZar).to.be.closeTo(body.costUsd * body.exchangeRate, 0.01));
+      pm.collectionVariables.set('serviceRequestId', body.id);
+    language: text/javascript
+order: 1000

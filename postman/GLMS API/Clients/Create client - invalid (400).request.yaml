@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/clients"
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "X",
+      "contactPerson": "",
+      "contactEmail": "not-an-email",
+      "contactPhone": "",
+      "region": ""
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('400 Bad Request', () => pm.response.to.have.status(400));
+      pm.test('reports validation errors', () => pm.expect(pm.response.json().errors).to.be.an('object'));
+    language: text/javascript
+order: 2000

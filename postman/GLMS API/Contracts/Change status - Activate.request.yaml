@@ -1,0 +1,22 @@
+$kind: http-request
+description: "status: Draft | Active | Expired | OnHold. Allowed: Draft->Active, Active->OnHold|Expired, OnHold->Active|Expired."
+url: "{{baseUrl}}/api/contracts/{{contractId}}/status"
+method: PATCH
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "status": "Active"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('now Active', () => pm.expect(body.status).to.eql('Active'));
+      pm.test('accepts service requests', () => pm.expect(body.canAcceptServiceRequests).to.be.true);
+    language: text/javascript
+order: 7000

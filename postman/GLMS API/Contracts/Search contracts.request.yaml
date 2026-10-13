@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/contracts?status=Active&clientId={{clientId}}&from={{startDate}}&to={{endDate}}&search=Postman"
+method: GET
+queryParams:
+  status: Active
+  clientId: "{{clientId}}"
+  from: "{{startDate}}"
+  to: "{{endDate}}"
+  search: Postman
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      const ids = pm.response.json().map(c => c.id);
+      pm.test('includes the new contract', () => pm.expect(ids).to.include(Number(pm.collectionVariables.get('contractId'))));
+    language: text/javascript
+order: 8000

@@ -486,3 +486,6 @@ $RECYCLE.BIN/
 # Uploaded signed agreements (runtime data, not source)
 **/App_Data/
 TestResults/
+
+# Postman local workspace settings (personal workspace id)
+postman/.postman/
