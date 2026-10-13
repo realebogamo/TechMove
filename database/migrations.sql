@@ -206,3 +206,44 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013150758_AddUsers'
+)
+BEGIN
+    CREATE TABLE [Users] (
+        [Id] int NOT NULL IDENTITY,
+        [Username] nvarchar(100) NOT NULL,
+        [PasswordHash] nvarchar(256) NOT NULL,
+        [Role] nvarchar(20) NOT NULL,
+        [CreatedAtUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_Users] PRIMARY KEY ([Id])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013150758_AddUsers'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Users_Username] ON [Users] ([Username]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013150758_AddUsers'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261013150758_AddUsers', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

@@ -58,6 +58,21 @@ public class ContractRepository : IContractRepository
     public Task SaveChangesAsync(CancellationToken ct = default) => _db.SaveChangesAsync(ct);
 }
 
+public class UserRepository : IUserRepository
+{
+    private readonly GlmsDbContext _db;
+
+    public UserRepository(GlmsDbContext db) => _db = db;
+
+    public Task<AppUser?> GetByUsernameAsync(string username, CancellationToken ct = default) =>
+        _db.Users.FirstOrDefaultAsync(u => u.Username == username, ct);
+
+    public async Task AddAsync(AppUser user, CancellationToken ct = default) =>
+        await _db.Users.AddAsync(user, ct);
+
+    public Task SaveChangesAsync(CancellationToken ct = default) => _db.SaveChangesAsync(ct);
+}
+
 public class ServiceRequestRepository : IServiceRequestRepository
 {
     private readonly GlmsDbContext _db;

@@ -34,6 +34,13 @@ public interface IServiceRequestRepository
     Task SaveChangesAsync(CancellationToken ct = default);
 }
 
+public interface IUserRepository
+{
+    Task<AppUser?> GetByUsernameAsync(string username, CancellationToken ct = default);
+    Task AddAsync(AppUser user, CancellationToken ct = default);
+    Task SaveChangesAsync(CancellationToken ct = default);
+}
+
 /// <summary>Stores uploaded files on disk (not in the database).</summary>
 public interface IFileStorage
 {

@@ -3,6 +3,7 @@ using GLMS.Shared.Abstractions;
 using GLMS.Shared.Dtos;
 using GLMS.Shared.Enums;
 using GLMS.Web.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GLMS.Web.Controllers;
@@ -39,6 +40,7 @@ public class HomeController : Controller
         });
     }
 
+    [AllowAnonymous]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error() =>
         View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });

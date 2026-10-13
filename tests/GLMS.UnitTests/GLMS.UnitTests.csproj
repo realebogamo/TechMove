@@ -31,6 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\GLMS.Core\GLMS.Core.csproj" />
     <ProjectReference Include="..\..\src\GLMS.Infrastructure\GLMS.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\GLMS.Web\GLMS.Web.csproj" />
   </ItemGroup>
 
 </Project>
