@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/contracts/{{contractId}}"
+method: PUT
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Postman freight contract (amended)",
+      "startDate": "{{startDate}}",
+      "endDate": "{{endDate}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('title updated', () => pm.expect(pm.response.json().title).to.eql('Postman freight contract (amended)'));
+    language: text/javascript
+order: 4000

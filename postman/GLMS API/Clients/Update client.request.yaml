@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/clients/{{clientId}}"
+method: PUT
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Postman Logistics (updated) {{$randomInt}}",
+      "contactPerson": "Thandi Mokoena",
+      "contactEmail": "thandi@example.com",
+      "contactPhone": "+27 21 555 0100",
+      "region": "Western Cape"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('region updated', () => pm.expect(pm.response.json().region).to.eql('Western Cape'));
+    language: text/javascript
+order: 6000

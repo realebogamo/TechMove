@@ -315,3 +315,37 @@ GLMS_API_URL=http://localhost:8081/ dotnet test tests/GLMS.IntegrationTests  # a
 
 GitHub Actions (`.github/workflows/ci.yml`) runs all tests on every push and pull request. A second job
 builds both images, starts the Compose stack, and runs the integration tests against the containers.
+
+## Testing with Postman
+
+The [`postman/`](postman/) folder holds a Postman collection in the v3 YAML format (one `.request.yaml` file
+per request) and two environments:
+
+| Environment | Base URL | Use when |
+|---|---|---|
+| `GLMS - Docker` | http://localhost:8081 | the API is running under `docker compose up` |
+| `GLMS - Local` | http://localhost:5147 | the API is running with `dotnet run --project src/GLMS.Api` |
+
+**In the Postman app:** open the `postman/` folder in Local Mode (or import `postman/GLMS API` and the two
+`*.environment.yaml` files), select an environment, then send **Auth > Login** or use **Run collection**.
+Login stores the JWT in `{{token}}` and every other request sends it as a Bearer token. Create requests
+store the new `clientId`, `contractId` and `serviceRequestId`, so the folders run in order as one workflow:
+
+* **Auth:** login, wrong password (401), no token (401).
+* **Clients:** create, list, get, update; invalid input (400), unknown id (404).
+* **Contracts:** create as Draft, get, update, activate, search with filters; end before start (400),
+  Draft to Expired (400), service request on a Draft contract (400), `to` before `from` (400).
+* **Exchange rates:** current USD to ZAR rate.
+* **Service requests:** create (checks ZAR = USD x rate), list by contract, get, approve, complete;
+  completing a Pending request (400).
+* **Signed agreement:** upload a PDF, then download it. Choose a PDF for the `file` field first.
+
+**From the command line** (Newman cannot run v3 collections, so use the Postman CLI):
+
+```bash
+npx postman-cli collection run "postman/GLMS API" -e "postman/GLMS - Docker.environment.yaml" \
+  -i Auth -i Clients -i Contracts -i "Exchange rates" -i "Service requests"
+```
+
+The `-i` flags skip the signed-agreement folder, which needs a file chosen in the app. Each run adds a
+client, contract and service request to the database.

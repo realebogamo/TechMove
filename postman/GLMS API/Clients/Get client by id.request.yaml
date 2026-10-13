@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/clients/{{clientId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('is the created client', () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('clientId'))));
+    language: text/javascript
+order: 4000

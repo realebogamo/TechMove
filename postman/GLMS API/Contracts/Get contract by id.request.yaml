@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/contracts/{{contractId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('Draft can only go to Active', () => pm.expect(pm.response.json().allowedTransitions).to.eql(['Active']));
+    language: text/javascript
+order: 3000

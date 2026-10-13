@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/service-requests/{{serviceRequestId}}/status"
+method: PATCH
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "status": "Completed"
+    }
+scripts:
+  - type: afterResponse
+    code: "pm.test('400: Pending cannot go straight to Completed', () => pm.response.to.have.status(400));"
+    language: text/javascript
+order: 4000

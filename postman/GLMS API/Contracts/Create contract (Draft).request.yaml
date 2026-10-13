@@ -1,0 +1,35 @@
+$kind: http-request
+description: "serviceLevel: Standard | Express | Premium"
+url: "{{baseUrl}}/api/contracts"
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Postman freight contract",
+      "clientId": {{clientId}},
+      "startDate": "{{startDate}}",
+      "endDate": "{{endDate}}",
+      "serviceLevel": "Express"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Term runs from today for one year, so the contract can accept service requests once Active.
+      const today = new Date();
+      const nextYear = new Date(today); nextYear.setFullYear(today.getFullYear() + 1);
+      const iso = d => d.toISOString().slice(0, 10);
+      pm.collectionVariables.set('startDate', iso(today));
+      pm.collectionVariables.set('endDate', iso(nextYear));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('201 Created', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test('starts as Draft', () => pm.expect(body.status).to.eql('Draft'));
+      pm.collectionVariables.set('contractId', body.id);
+    language: text/javascript
+order: 1000
