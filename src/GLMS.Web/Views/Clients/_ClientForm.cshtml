@@ -1,0 +1,34 @@
+@model ClientInputDto
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Region" class="form-label"></label>
+        <input asp-for="Region" class="form-control" list="regions" />
+        <datalist id="regions">
+            <option value="Africa"></option><option value="Europe"></option><option value="Asia-Pacific"></option>
+            <option value="North America"></option><option value="South America"></option><option value="Middle East"></option>
+        </datalist>
+        <span asp-validation-for="Region" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ContactPerson" class="form-label"></label>
+        <input asp-for="ContactPerson" class="form-control" />
+        <span asp-validation-for="ContactPerson" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ContactEmail" class="form-label"></label>
+        <input asp-for="ContactEmail" class="form-control" />
+        <span asp-validation-for="ContactEmail" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ContactPhone" class="form-label"></label>
+        <input asp-for="ContactPhone" class="form-control" />
+        <span asp-validation-for="ContactPhone" class="text-danger"></span>
+    </div>
+</div>

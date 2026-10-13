@@ -1,0 +1,11 @@
+@model IReadOnlyList<ServiceRequestDto>
+@{
+    ViewData["Title"] = "Service requests";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Service requests</h1>
+    <a class="btn btn-primary" asp-action="Create" asp-route-contractId="@ViewBag.ContractId">New service request</a>
+</div>
+
+<partial name="_ServiceRequestTable" model="Model" />

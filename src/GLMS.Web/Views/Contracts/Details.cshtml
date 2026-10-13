@@ -1,0 +1,86 @@
+@model ContractDetailsViewModel
+@{
+    var c = Model.Contract;
+    ViewData["Title"] = c.Title;
+}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h1 class="h3 mb-1">@c.Title</h1>
+        <a asp-controller="Clients" asp-action="Details" asp-route-id="@c.ClientId">@c.ClientName</a>
+        <span class="badge @c.Status.BadgeClass() ms-2">@c.Status.Label()</span>
+    </div>
+    @if (c.Status != ContractStatus.Expired)
+    {
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@c.Id">Edit</a>
+    }
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Terms</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Term</dt><dd class="col-sm-7">@c.StartDate.ToString("yyyy-MM-dd") &rarr; @c.EndDate.ToString("yyyy-MM-dd")</dd>
+                    <dt class="col-sm-5">Service level</dt><dd class="col-sm-7">@c.ServiceLevel</dd>
+                    <dt class="col-sm-5">SLA response</dt><dd class="col-sm-7">@c.SlaResponseHours hours</dd>
+                    <dt class="col-sm-5">Accepts requests</dt>
+                    <dd class="col-sm-7">@(c.CanAcceptServiceRequests ? "Yes" : "No")</dd>
+                </dl>
+            </div>
+            @if (c.AllowedTransitions.Count > 0)
+            {
+                <div class="card-footer d-flex flex-wrap gap-2 align-items-center">
+                    <span class="small text-muted me-1">Change status:</span>
+                    @foreach (var target in c.AllowedTransitions)
+                    {
+                        <form asp-action="ChangeStatus" asp-route-id="@c.Id" method="post" class="d-inline">
+                            <input type="hidden" name="status" value="@target" />
+                            <button type="submit" class="btn btn-sm btn-outline-dark">@target.Label()</button>
+                        </form>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Signed agreement (PDF)</div>
+            <div class="card-body">
+                @if (c.HasSignedAgreement)
+                {
+                    <p class="mb-3">
+                        <a class="btn btn-sm btn-success" asp-action="DownloadAgreement" asp-route-id="@c.Id">Download</a>
+                        <span class="ms-2">@c.SignedAgreementFileName</span>
+                    </p>
+                }
+                else
+                {
+                    <p class="text-muted">No signed agreement uploaded yet.</p>
+                }
+                <form asp-action="UploadAgreement" asp-route-id="@c.Id" method="post" enctype="multipart/form-data" data-pdf-upload>
+                    <div class="input-group">
+                        <input type="file" name="signedAgreement" class="form-control" accept=".pdf,application/pdf" />
+                        <button type="submit" class="btn btn-outline-primary">@(c.HasSignedAgreement ? "Replace" : "Upload")</button>
+                    </div>
+                    <div class="text-danger small mt-1" data-pdf-error></div>
+                    <div class="form-text">PDF only, up to 10 MB.</div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+    <h2 class="h5 mb-0">Service requests</h2>
+    @if (c.CanAcceptServiceRequests)
+    {
+        <a class="btn btn-primary btn-sm" asp-controller="ServiceRequests" asp-action="Create" asp-route-contractId="@c.Id">New service request</a>
+    }
+    else
+    {
+        <span class="small text-muted">New requests are blocked while this contract is @c.Status.Label().</span>
+    }
+</div>
+<partial name="_ServiceRequestTable" model="Model.ServiceRequests" />

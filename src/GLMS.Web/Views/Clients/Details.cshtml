@@ -1,0 +1,23 @@
+@model ClientDto
+@{
+    ViewData["Title"] = Model.Name;
+    var contracts = (IReadOnlyList<ContractDto>)ViewBag.Contracts;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">@Model.Name</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+        <a class="btn btn-primary" asp-controller="Contracts" asp-action="Create" asp-route-clientId="@Model.Id">New contract</a>
+    </div>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Contact person</dt><dd class="col-sm-9">@Model.ContactPerson</dd>
+    <dt class="col-sm-3">Email</dt><dd class="col-sm-9"><a href="mailto:@Model.ContactEmail">@Model.ContactEmail</a></dd>
+    <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">@Model.ContactPhone</dd>
+    <dt class="col-sm-3">Region</dt><dd class="col-sm-9">@Model.Region</dd>
+</dl>
+
+<h2 class="h5 mt-4">Contracts</h2>
+<partial name="_ContractTable" model="contracts" />

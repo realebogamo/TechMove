@@ -1,0 +1,48 @@
+@model ContractIndexViewModel
+@{
+    ViewData["Title"] = "Contracts";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Contracts</h1>
+    <a class="btn btn-primary" asp-action="Create">New contract</a>
+</div>
+
+<form method="get" asp-action="Index" class="card card-body mb-4">
+    <div asp-validation-summary="All" class="text-danger small"></div>
+    <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label for="From" class="form-label small">In force from</label>
+            <input type="date" id="From" name="From" class="form-control" value="@Model.Filter.From?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-2">
+            <label for="To" class="form-label small">to</label>
+            <input type="date" id="To" name="To" class="form-control" value="@Model.Filter.To?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-2">
+            <label for="Status" class="form-label small">Status</label>
+            <select id="Status" name="Status" class="form-select"
+                    asp-items="Html.GetEnumSelectList<ContractStatus>().Select(i => { i.Value = ((ContractStatus)int.Parse(i.Value)).ToString(); i.Selected = i.Value == Model.Filter.Status?.ToString(); return i; })">
+                <option value="">Any</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="ClientId" class="form-label small">Client</label>
+            <select id="ClientId" name="ClientId" class="form-select"
+                    asp-items="Model.Clients.Select(i => { i.Selected = i.Value == Model.Filter.ClientId?.ToString(); return i; })">
+                <option value="">Any</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="Search" class="form-label small">Text</label>
+            <input id="Search" name="Search" class="form-control" value="@Model.Filter.Search" placeholder="Title or client" />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary flex-grow-1">Filter</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+        </div>
+    </div>
+    <div class="form-text">Date range finds contracts whose term overlaps the range.</div>
+</form>
+
+<partial name="_ContractTable" model="Model.Contracts" />

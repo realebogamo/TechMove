@@ -1,0 +1,48 @@
+@model CreateContractDto
+@{
+    ViewData["Title"] = "New contract";
+}
+
+<h1 class="h3 mb-3">New contract</h1>
+<p class="text-muted">New contracts start as <strong>Draft</strong>. The SLA response time is set by the service level.</p>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ClientId" class="form-label"></label>
+            <select asp-for="ClientId" asp-items="(IEnumerable<SelectListItem>)ViewBag.Clients" class="form-select">
+                <option value="0">Select a client</option>
+            </select>
+            <span asp-validation-for="ClientId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="StartDate" class="form-label"></label>
+            <input asp-for="StartDate" class="form-control" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="EndDate" class="form-label"></label>
+            <input asp-for="EndDate" class="form-control" />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ServiceLevel" class="form-label"></label>
+            <select asp-for="ServiceLevel" asp-items="Html.GetEnumSelectList<ServiceLevel>()" class="form-select"></select>
+            <div class="form-text">Standard 72 h &middot; Express 24 h &middot; Premium 4 h</div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Create contract</button>
+        <a asp-action="Index" class="btn btn-link">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
