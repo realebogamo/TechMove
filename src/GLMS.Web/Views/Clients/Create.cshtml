@@ -1,0 +1,17 @@
+@model ClientInputDto
+@{
+    ViewData["Title"] = "New client";
+}
+
+<h1 class="h3 mb-3">New client</h1>
+<form asp-action="Create" method="post">
+    <partial name="_ClientForm" model="Model" />
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Create client</button>
+        <a asp-action="Index" class="btn btn-link">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

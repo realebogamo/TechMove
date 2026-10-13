@@ -1,0 +1,70 @@
+@model ServiceRequestCreateViewModel
+@{
+    ViewData["Title"] = "New service request";
+}
+
+<h1 class="h3 mb-3">New service request</h1>
+
+@if (Model.Rate is null)
+{
+    <div class="alert alert-warning">
+        The live exchange-rate service is unavailable, so the ZAR cost cannot be calculated right now.
+        You can fill in the form, but it will only be saved once a rate is available.
+    </div>
+}
+else if (Model.Rate.IsStale)
+{
+    <div class="alert alert-warning">
+        The live exchange-rate service did not respond. Using the last known rate from @Model.Rate.RetrievedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC.
+    </div>
+}
+
+@if (!Model.Contracts.Any())
+{
+    <div class="alert alert-info">There are no active contracts. Service requests can only be raised against Active contracts.</div>
+}
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-12">
+            <label asp-for="Input.ContractId" class="form-label"></label>
+            <select asp-for="Input.ContractId" asp-items="Model.Contracts" class="form-select">
+                <option value="0">Select an active contract</option>
+            </select>
+            <span asp-validation-for="Input.ContractId" class="text-danger"></span>
+        </div>
+        <div class="col-md-12">
+            <label asp-for="Input.Description" class="form-label"></label>
+            <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Input.Description" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.CostUsd" class="form-label"></label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input asp-for="Input.CostUsd" class="form-control" type="number" step="0.01" min="0.01" />
+            </div>
+            <span asp-validation-for="Input.CostUsd" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Cost (ZAR)</label>
+            <div class="form-control bg-light" data-zar-preview data-source="Input_CostUsd"
+                 data-rate="@(Model.Rate?.Rate.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")">-</div>
+            <div class="form-text">Calculated automatically and saved with the request.</div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">USD &rarr; ZAR rate</label>
+            <div class="form-control bg-light">@(Model.Rate?.Rate.ToString("N4") ?? "unavailable")</div>
+            <div class="form-text">Source: ExchangeRate-API</div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Raise request</button>
+        <a asp-action="Index" class="btn btn-link">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,36 @@
+@model IReadOnlyList<ContractDto>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">No contracts found.</p>
+}
+else
+{
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr><th>Contract</th><th>Client</th><th>Term</th><th>Service level</th><th>Status</th><th>Agreement</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model)
+            {
+                <tr>
+                    <td><a asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">@c.Title</a></td>
+                    <td>@c.ClientName</td>
+                    <td class="text-nowrap">@c.StartDate.ToString("yyyy-MM-dd") &rarr; @c.EndDate.ToString("yyyy-MM-dd")</td>
+                    <td>@c.ServiceLevel <span class="small text-muted">(@c.SlaResponseHours h)</span></td>
+                    <td><span class="badge @c.Status.BadgeClass()">@c.Status.Label()</span></td>
+                    <td>
+                        @if (c.HasSignedAgreement)
+                        {
+                            <a asp-controller="Contracts" asp-action="DownloadAgreement" asp-route-id="@c.Id">PDF</a>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">None</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
