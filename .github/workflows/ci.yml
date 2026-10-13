@@ -38,3 +38,48 @@ jobs:
         with:
           name: test-results
           path: TestResults
+
+  docker-compose:
+    # Builds both images, starts the three-container stack, and runs the integration
+    # tests against the containerised glms-backend-api over the network.
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Start stack
+        run: docker compose up -d
+
+      - name: Wait for API health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:8081/health; then echo; echo "API healthy"; exit 0; fi
+            sleep 5
+          done
+          docker compose logs
+          exit 1
+
+      - name: Integration tests against containers
+        env:
+          GLMS_API_URL: http://localhost:8081/
+        run: dotnet test tests/GLMS.IntegrationTests --configuration Release --logger "console;verbosity=normal"
+
+      - name: Web front end responds
+        run: curl -fs -o /dev/null -w "%{http_code}\n" http://localhost:8080/Account/Login
+
+      - name: Compose logs
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v

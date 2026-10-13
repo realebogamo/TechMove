@@ -70,6 +70,19 @@ public class ServiceRequestConfiguration : IEntityTypeConfiguration<ServiceReque
     }
 }
 
+public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
+{
+    public void Configure(EntityTypeBuilder<AppUser> b)
+    {
+        b.ToTable("Users");
+        b.HasKey(u => u.Id);
+        b.Property(u => u.Username).IsRequired().HasMaxLength(100);
+        b.HasIndex(u => u.Username).IsUnique();
+        b.Property(u => u.PasswordHash).IsRequired().HasMaxLength(256);
+        b.Property(u => u.Role).IsRequired().HasMaxLength(20);
+    }
+}
+
 public class ContractStatusHistoryConfiguration : IEntityTypeConfiguration<ContractStatusHistory>
 {
     public void Configure(EntityTypeBuilder<ContractStatusHistory> b)

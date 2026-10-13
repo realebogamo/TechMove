@@ -1,0 +1,90 @@
+# TechMove GLMS: three containers on internal Docker networks.
+#
+#   browser -> :8080 glms-frontend-web --(glms-frontend net)--> glms-backend-api --(glms-backend net)--> sql-server-db
+#
+# glms-frontend-web is NOT attached to the backend network, so it cannot reach the database at all;
+# the API is the only service that talks to SQL Server. Containers find each other by service name.
+#
+# Secrets come from environment variables (copy .env.example to .env to override the dev defaults).
+
+name: glms
+
+services:
+  sql-server-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:-Glms_Dev_Pass123}
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - glms-backend
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  glms-backend-api:
+    build:
+      context: .
+      dockerfile: src/GLMS.Api/Dockerfile
+    image: glms-backend-api:latest
+    container_name: glms-backend-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Server=sql-server-db,1433;Database=GlmsDb;User Id=sa;Password=${SA_PASSWORD:-Glms_Dev_Pass123};TrustServerCertificate=True;Encrypt=True"
+      Database__MigrateOnStartup: "true"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-compose-dev-signing-key-change-me-0123456789}
+      Jwt__LifetimeMinutes: "60"
+      Auth__SeedAdmin__Username: ${GLMS_ADMIN_USER:-admin}
+      Auth__SeedAdmin__Password: ${GLMS_ADMIN_PASSWORD:-Admin@12345}
+      ExchangeRateApi__BaseUrl: https://open.er-api.com/v6/
+      ContractExpiry__IntervalMinutes: "60"
+      Swagger__Enabled: "true"
+    depends_on:
+      sql-server-db:
+        condition: service_healthy
+    ports:
+      - "8081:8080"   # Swagger UI at http://localhost:8081/swagger
+    volumes:
+      - agreements:/app/App_Data/agreements
+    networks:
+      - glms-backend
+      - glms-frontend
+    restart: unless-stopped
+
+  glms-frontend-web:
+    build:
+      context: .
+      dockerfile: src/GLMS.Web/Dockerfile
+    image: glms-frontend-web:latest
+    container_name: glms-frontend-web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      GlmsApi__BaseUrl: http://glms-backend-api:8080/
+      GlmsApi__TimeoutSeconds: "15"
+      UseHttpsRedirection: "false"
+    depends_on:
+      - glms-backend-api
+    ports:
+      - "8080:8080"   # web UI at http://localhost:8080
+    volumes:
+      - web-keys:/app/keys
+    networks:
+      - glms-frontend
+    restart: unless-stopped
+
+networks:
+  glms-backend:
+    internal: true   # no route to the outside world or the host; only the API and SQL Server
+  glms-frontend:
+
+volumes:
+  sql-data:
+  agreements:
+  web-keys:

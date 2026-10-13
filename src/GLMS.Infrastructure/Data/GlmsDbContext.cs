@@ -13,6 +13,7 @@ public class GlmsDbContext : DbContext
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<ServiceRequest> ServiceRequests => Set<ServiceRequest>();
     public DbSet<ContractStatusHistory> ContractStatusHistory => Set<ContractStatusHistory>();
+    public DbSet<AppUser> Users => Set<AppUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

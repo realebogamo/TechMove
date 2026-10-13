@@ -1,26 +1,41 @@
-using GLMS.Core;
-using GLMS.Infrastructure;
-using GLMS.Infrastructure.Data;
+using GLMS.Web.ApiClients;
 using GLMS.Web.Infrastructure;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Mvc.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(o =>
+{
+    o.Filters.Add(new AuthorizeFilter()); // every page needs a signed-in user unless marked [AllowAnonymous]
+    o.Filters.Add<ApiExceptionFilter>();
+});
 builder.Services.AddSingleton<IValidationAttributeAdapterProvider, GlmsValidationAttributeAdapterProvider>();
 
-// Layered monolith: controllers -> services (GLMS.Core) -> repositories (GLMS.Infrastructure) -> SQL Server.
-builder.Services.AddGlmsCore();
-builder.Services.AddGlmsInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
+// Decoupled front end: no DbContext and no connection string. The controllers keep using the
+// GLMS.Shared service interfaces, now implemented by typed HttpClients that call glms-backend-api.
+builder.Services.AddGlmsApiClients(builder.Configuration);
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(o =>
+    {
+        o.LoginPath = "/Account/Login";
+        o.LogoutPath = "/Account/Logout";
+        o.Cookie.Name = "glms.auth";
+        o.Cookie.HttpOnly = true;
+        o.Cookie.SameSite = SameSiteMode.Lax;
+        o.SlidingExpiration = false; // the cookie lives exactly as long as the API's JWT
+    });
+
+// Keep data-protection keys on a volume in Docker so sign-ins survive container restarts.
+var keysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(keysPath))
+    builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(keysPath)).SetApplicationName("glms-frontend-web");
 
 var app = builder.Build();
-
-if (app.Configuration.GetValue("Database:MigrateOnStartup", true))
-{
-    using var scope = app.Services.CreateScope();
-    await scope.ServiceProvider.GetRequiredService<GlmsDbContext>().Database.MigrateAsync();
-}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -38,9 +53,11 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     SupportedUICultures = new[] { culture }
 });
 
-app.UseHttpsRedirection();
+if (app.Configuration.GetValue("UseHttpsRedirection", true))
+    app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

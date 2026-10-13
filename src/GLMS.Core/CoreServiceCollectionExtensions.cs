@@ -1,7 +1,9 @@
+using GLMS.Core.Entities;
 using GLMS.Core.Patterns.Factory;
 using GLMS.Core.Patterns.Observer;
 using GLMS.Core.Services;
 using GLMS.Shared.Abstractions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -33,6 +35,9 @@ public static class CoreServiceCollectionExtensions
         services.AddScoped<IContractService>(sp => sp.GetRequiredService<ContractService>());
         services.AddScoped<IContractLifecycleService>(sp => sp.GetRequiredService<ContractService>());
         services.AddScoped<IServiceRequestService, ServiceRequestService>();
+
+        services.AddSingleton<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

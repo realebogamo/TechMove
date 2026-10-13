@@ -1,0 +1,11 @@
+@{
+    ViewData["Title"] = "Service unavailable";
+}
+
+<div class="alert alert-warning">
+    <h1 class="h4">The GLMS service is temporarily unavailable</h1>
+    <p class="mb-2">We could not reach the back-end API, so this page cannot be shown right now. No changes were saved.</p>
+    <p class="small text-muted mb-3">@ViewData["Message"]</p>
+    <a class="btn btn-outline-dark btn-sm" href="javascript:location.reload()">Try again</a>
+    <a class="btn btn-link btn-sm" asp-controller="Home" asp-action="Index">Dashboard</a>
+</div>

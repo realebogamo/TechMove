@@ -17,13 +17,19 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav flex-grow-1 @(User.Identity?.IsAuthenticated == true ? "" : "d-none")">
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Clients" asp-action="Index">Clients</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Contracts" asp-action="Index">Contracts</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="ServiceRequests" asp-action="Index">Service requests</a></li>
                     </ul>
-                    @await RenderSectionAsync("NavRight", required: false)
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-flex align-items-center gap-2">
+                            <span class="navbar-text small">@User.Identity.Name</span>
+                            <button type="submit" class="btn btn-sm btn-outline-light">Sign out</button>
+                        </form>
+                    }
                 </div>
             </div>
         </nav>
